@@ -2,14 +2,16 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 import torch.nn as nn
-from sklearn.utils import class_weight 
+from sklearn.utils import class_weight
 from utils.lovasz_losses import lovasz_softmax
+from typing import Optional
+
 
 def make_one_hot(labels, classes):
     one_hot = torch.FloatTensor(labels.size()[0], classes, labels.size()[2], labels.size()[3]).zero_().to(labels.device)
     target = one_hot.scatter_(1, labels.data, 1)
     return target
-
+"""
 def get_weights(target):
     t_np = target.view(-1).data.cpu().numpy()
 
@@ -20,14 +22,45 @@ def get_weights(target):
     weights = np.ones(7)
     weights[classes] = cls_w
     return torch.from_numpy(weights).float().cuda()
+"""
+
+
+def get_weights(target, num_classes):
+    t_np = target.view(-1).data.cpu().numpy()
+
+    classes, counts = np.unique(t_np, return_counts=True)
+
+    cls_w = np.median(counts) / counts
+    # cls_w = class_weight.compute_class_weight('balanced', classes, t_np)
+
+    weights = np.ones(num_classes)
+
+    weights[classes] = cls_w
+    # print(classes, cls_w, weights)
+    return torch.from_numpy(weights).float().cuda()
+
+
+class WeightedCrossEntropyLoss(nn.CrossEntropyLoss):  # update weight for every batch
+    def __init__(self, weight=None, ignore_index=-100, reduction='mean',
+                 label_smoothing=0.0):
+        super(WeightedCrossEntropyLoss, self).__init__(weight=weight,
+                                                       ignore_index=ignore_index,
+                                                       reduction=reduction,
+                                                       label_smoothing=label_smoothing)
+
+    def forward(self, input: torch.Tensor, target: torch.Tensor, weight: Optional[torch.Tensor] = None) -> torch.Tensor:
+        return F.cross_entropy(input, target, weight=weight,
+                               ignore_index=self.ignore_index, reduction=self.reduction,
+                               label_smoothing=self.label_smoothing)
+
 
 class CrossEntropyLoss2d(nn.Module):
     def __init__(self, weight=None, ignore_index=255, reduction='mean'):
         super(CrossEntropyLoss2d, self).__init__()
-        self.CE =  nn.CrossEntropyLoss(weight=weight, ignore_index=ignore_index, reduction=reduction)
+        self.CE = WeightedCrossEntropyLoss(weight=weight, ignore_index=ignore_index, reduction=reduction)
 
-    def forward(self, output, target):
-        loss = self.CE(output, target)
+    def forward(self, output, target, weight):
+        loss = self.CE(output, target, weight)
         return loss
 
 class DiceLoss(nn.Module):

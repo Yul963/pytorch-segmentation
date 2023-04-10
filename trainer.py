@@ -8,6 +8,8 @@ from base import BaseTrainer, DataPrefetcher
 from utils.helpers import colorize_mask
 from utils.metrics import eval_metrics, AverageMeter
 from tqdm import tqdm
+from utils.losses import get_weights
+
 
 class Trainer(BaseTrainer):
     def __init__(self, model, loss, resume, config, train_loader, val_loader=None, train_logger=None, prefetch=True):
@@ -27,7 +29,7 @@ class Trainer(BaseTrainer):
             transforms.Resize((400, 400)),
             transforms.ToTensor()])
         
-        if self.device ==  torch.device('cpu'): prefetch = False
+        if self.device == torch.device('cpu'): prefetch = False
         if prefetch:
             self.train_loader = DataPrefetcher(train_loader, device=self.device)
             self.val_loader = DataPrefetcher(val_loader, device=self.device)
@@ -49,26 +51,30 @@ class Trainer(BaseTrainer):
         for batch_idx, (data, target) in enumerate(tbar):
             self.data_time.update(time.time() - tic)
             #data, target = data.to(self.device), target.to(self.device)
-            self.lr_scheduler.step(epoch=epoch-1)
 
             # LOSS & OPTIMIZE
             self.optimizer.zero_grad()
             output = self.model(data)
+            # target = target.permute(0, 3, 1, 2)
+            self.weight = get_weights(target, self.num_classes)
             if self.config['arch']['type'][:3] == 'PSP':
                 assert output[0].size()[2:] == target.size()[1:]
                 assert output[0].size()[1] == self.num_classes 
-                loss = self.loss(output[0], target)
-                loss += self.loss(output[1], target) * 0.4
+                loss = self.loss(output[0], target, self.weight)
+                loss += self.loss(output[1], target, self.weight) * 0.4
                 output = output[0]
             else:
+                # print(output.size(), target.size())
                 assert output.size()[2:] == target.size()[1:]
-                assert output.size()[1] == self.num_classes 
-                loss = self.loss(output, target)
+                assert output.size()[1] == self.num_classes
+                # print(self.weight)
+                loss = self.loss(output, target, self.weight)
 
             if isinstance(self.loss, torch.nn.DataParallel):
                 loss = loss.mean()
             loss.backward()
             self.optimizer.step()
+            self.lr_scheduler.step(epoch=epoch - 1)
             self.total_loss.update(loss.item())
 
             # measure elapsed time
@@ -122,8 +128,9 @@ class Trainer(BaseTrainer):
             for batch_idx, (data, target) in enumerate(tbar):
                 #data, target = data.to(self.device), target.to(self.device)
                 # LOSS
+                self.weight = get_weights(target, self.num_classes)
                 output = self.model(data)
-                loss = self.loss(output, target)
+                loss = self.loss(output, target, self.weight)
                 if isinstance(self.loss, torch.nn.DataParallel):
                     loss = loss.mean()
                 self.total_loss.update(loss.item())
