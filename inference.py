@@ -98,7 +98,7 @@ def main():
 
     # Dataset used for training the model
     dataset_type = config['train_loader']['type']
-    assert dataset_type in ['VOC', 'COCO', 'CityScapes', 'ADE20K']
+    assert dataset_type in ['VOC', 'COCO', 'CityScapes', 'ADE20K', 'Custom']
     if dataset_type == 'CityScapes': 
         scales = [0.75, 1.0, 1.25, 1.5, 1.75, 2.0, 2.25] 
     else:
@@ -118,6 +118,7 @@ def main():
     checkpoint = torch.load(args.model, map_location=device)
     if isinstance(checkpoint, dict) and 'state_dict' in checkpoint.keys():
         checkpoint = checkpoint['state_dict']
+        
     # If during training, we used data parallel
     if 'module' in list(checkpoint.keys())[0] and not isinstance(model, torch.nn.DataParallel):
         # for gpu inference, use data parallel
@@ -143,6 +144,7 @@ def main():
         tbar = tqdm(image_files, ncols=100)
         for img_file in tbar:
             image = Image.open(img_file).convert('RGB')
+            image = image.resize((400, 400))
             input = normalize(to_tensor(image)).unsqueeze(0)
             
             if args.mode == 'multiscale':
@@ -155,9 +157,10 @@ def main():
             prediction = F.softmax(torch.from_numpy(prediction), dim=0).argmax(0).cpu().numpy()
             save_images(image, prediction, args.output, img_file, palette)
 
+
 def parse_arguments():
     parser = argparse.ArgumentParser(description='Inference')
-    parser.add_argument('-c', '--config', default='VOC',type=str,
+    parser.add_argument('-c', '--config', default='config_segnet.json', type=str,
                         help='The config used to train the model')
     parser.add_argument('-mo', '--mode', default='multiscale', type=str,
                         help='Mode used for prediction: either [multiscale, sliding]')
@@ -171,6 +174,7 @@ def parse_arguments():
                         help='The extension of the images to be segmented')
     args = parser.parse_args()
     return args
+
 
 if __name__ == '__main__':
     main()

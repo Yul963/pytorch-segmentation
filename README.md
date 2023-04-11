@@ -86,7 +86,7 @@ All of the data augmentations are implemented using OpenCV in `\base\base_datase
 To train a model, first download the dataset to be used to train the model, then choose the desired architecture, add the correct path to the dataset and set the desired hyperparameters (the config file is detailed below), then simply run:
 
 ```bash
-python train.py --config config.json
+python train.py --config config_segnet.json
 ```
 
 The training will automatically be run on the GPUs (if more that one is detected and  multipple GPUs were selected in the config file, `torch.nn.DataParalled` is used for multi-gpu training), if not the CPU is used. The log files will be saved in `saved\runs` and the `.pth` chekpoints in `saved\`, to monitor the training using tensorboard, please run:
@@ -104,7 +104,7 @@ tensorboard --logdir saved
 For inference, we need a PyTorch trained model, the images we'd like to segment and the config used in training (to load the correct model and other parameters), 
 
 ```bash
-python inference.py --config config.json --model best_model.pth --images images_folder
+python inference.py --config config_segnet.json --model best_model.pth --images images_folder
 ```
 
 The predictions will be saved as `.png` images using the default palette in the passed fodler name, if not, `outputs\` is used, for Pacal VOC the default palette is:

@@ -90,12 +90,13 @@ class Trainer(BaseTrainer):
             seg_metrics = eval_metrics(output, target, self.num_classes)
             self._update_seg_metrics(*seg_metrics)
             pixAcc, mIoU, _ = self._get_seg_metrics().values()
-            
+
             # PRINT INFO
-            tbar.set_description('TRAIN ({}) | Loss: {:.3f} | Acc {:.2f} mIoU {:.2f} | B {:.2f} D {:.2f} |'.format(
-                                                epoch, self.total_loss.average, 
-                                                pixAcc, mIoU,
-                                                self.batch_time.average, self.data_time.average))
+            tbar.set_description(
+                'TRAIN ({}) | Loss: {:.3f} | Acc {:.2f} mIoU {:.2f} | B {:.2f} D {:.2f} | LR {:.5f}'.format(
+                    epoch, self.total_loss.average,
+                    pixAcc, mIoU, self.batch_time.average,
+                    self.data_time.average, self.optimizer.param_groups[0]['lr']))
 
         # METRICS TO TENSORBOARD
         seg_metrics = self._get_seg_metrics()

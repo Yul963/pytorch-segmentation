@@ -49,10 +49,11 @@ if __name__=='__main__':
     os.environ['TORCH_USE_CUDA_DSA'] = '1'
     os.environ['CUDA_LAUNCH_BLOCKING'] = '1'
     os.environ['NUMEXPR_MAX_THREADS'] = '8'
+    torch.autograd.set_detect_anomaly(True)
     # PARSE THE ARGS
     parser = argparse.ArgumentParser(description='PyTorch Training')
-    parser.add_argument('-c', '--config', default='config.json', type=str,
-                        help='Path to the config file (default: config.json)')
+    parser.add_argument('-c', '--config', default='config_segnet.json', type=str,
+                        help='Path to the config file (default: config_segnet.json)')
     parser.add_argument('-r', '--resume', default=None, type=str,
                         help='Path to the .pth model checkpoint to resume training')
     parser.add_argument('-d', '--device', default=None, type=str,
