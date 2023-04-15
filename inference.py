@@ -144,7 +144,7 @@ def main():
         tbar = tqdm(image_files, ncols=100)
         for img_file in tbar:
             image = Image.open(img_file).convert('RGB')
-            image = image.resize((400, 400))
+            image = image.resize((380, 380))
             input = normalize(to_tensor(image)).unsqueeze(0)
             
             if args.mode == 'multiscale':
