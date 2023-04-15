@@ -54,6 +54,8 @@ class SegNet(BaseModel):
         #if freeze_backbone:
         #    set_trainable([self.stage1_encoder, self.stage2_encoder, self.stage3_encoder, self.stage4_encoder, self.stage5_encoder], False)
 
+        self.dropout = nn.Dropout(p=0.5)  # 드롭아웃 레이어 추가
+
     def _initialize_weights(self, *stages):
         for modules in stages:
             for module in modules.modules():
@@ -102,6 +104,8 @@ class SegNet(BaseModel):
 
         x = self.unpool(x, indices=indices1, output_size=x1_size)
         x = self.stage5_decoder(x)
+
+        x = self.dropout(x)  # 드롭아웃 레이어 적용
 
         return x
 
