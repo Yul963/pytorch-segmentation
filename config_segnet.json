@@ -15,7 +15,7 @@
     "train_loader": {
         "type": "Custom",
         "args":{
-            "data_dir": "data/custom",
+            "data_dir": "data/custom_only_floor",
             "batch_size": 8,
             "base_size": 400,
             "crop_size": 400,
@@ -31,11 +31,11 @@
     },
 
     "val_loader": {
-        "type": "Custom",
+        "type": "CustomFloor",
         "args":{
-            "data_dir": "data/custom",
+            "data_dir": "data/custom_only_floor",
             "batch_size": 8,
-            "crop_size": 480,
+            "base_size": 400,
             "val": true,
             "split": "validation",
             "num_workers": 4
@@ -46,7 +46,7 @@
         "type": "SGD",
         "differential_lr": true,
         "args":{
-            "lr": 1e-4,
+            "lr": 0.01,
             "weight_decay": 1e-4,
             "momentum": 0.9
         }
@@ -60,9 +60,9 @@
     },
 
     "trainer": {
-        "epochs": 300,
+        "epochs": 250,
         "save_dir": "saved/",
-        "save_period": 10,
+        "save_period": 5,
   
         "monitor": "max Mean_IoU",
         "early_stop": 20,
