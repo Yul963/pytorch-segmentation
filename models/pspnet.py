@@ -19,7 +19,7 @@ class _PSPModule(nn.Module):
                                     kernel_size=3, padding=1, bias=False),
             norm_layer(out_channels),
             nn.ReLU(inplace=True),
-            nn.Dropout2d(0.1)
+            nn.Dropout2d(0.2)
         )
 
     def _make_stages(self, in_channels, out_channels, bin_sz, norm_layer):
@@ -65,7 +65,7 @@ class PSPNet(BaseModel):
             nn.Conv2d(m_out_sz//2, m_out_sz//4, kernel_size=3, padding=1, bias=False),
             norm_layer(m_out_sz//4),
             nn.ReLU(inplace=True),
-            nn.Dropout2d(0.1),
+            nn.Dropout2d(0.2),
             nn.Conv2d(m_out_sz//4, num_classes, kernel_size=1)
         )
 

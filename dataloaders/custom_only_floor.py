@@ -12,7 +12,6 @@ from torchvision import transforms
 
 
 class CustomFloorDataset(BaseDataSet):
-
     def __init__(self, **kwargs):
         self.num_classes = 2
         self.palette = palette.custom2_palette
@@ -34,42 +33,25 @@ class CustomFloorDataset(BaseDataSet):
         label = np.asarray(Image.open(label_path).convert('L'), dtype=np.int32)
         return image, label, image_id
 
-    def _val_augmentation(self, image, label):
-        h, w, _ = image.shape
-        if self.base_size:
-            if self.scale:
-                longside = random.randint(int(self.base_size * 0.5), int(self.base_size * 2.0))
-            else:
-                longside = self.base_size
-            h, w = (longside, int(1.0 * longside * w / h + 0.5)) if h > w else (
-            int(1.0 * longside * h / w + 0.5), longside)
-            image = cv2.resize(image, (w, h), interpolation=cv2.INTER_LINEAR)
-            label = cv2.resize(label, (w, h), interpolation=cv2.INTER_NEAREST)
-        return image, label
-
 
 class CustomFloor(BaseDataLoader):
-    def __init__(self, data_dir, batch_size, split, crop_size=None, base_size=None, scale=True, num_workers=1,
+    def __init__(self, data_dir, batch_size, split, size=None, num_workers=0,
                  val=False,
                  shuffle=False, flip=False, rotate=False, blur=False, augment=False, val_split=None, return_id=False):
         self.MEAN = [0.48897059, 0.46548275, 0.4294]
         self.STD = [0.22861765, 0.22948039, 0.24054667]
-
         kwargs = {
             'root': data_dir,
             'split': split,
             'mean': self.MEAN,
             'std': self.STD,
             'augment': augment,
-            'crop_size': crop_size,
-            'base_size': base_size,
-            'scale': scale,
+            'size': size,
             'flip': flip,
             'blur': blur,
             'rotate': rotate,
             'return_id': return_id,
             'val': val
         }
-
         self.dataset = CustomFloorDataset(**kwargs)
         super(CustomFloor, self).__init__(self.dataset, batch_size, shuffle, num_workers, val_split)

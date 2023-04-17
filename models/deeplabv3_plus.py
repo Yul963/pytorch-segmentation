@@ -347,6 +347,7 @@ class DeepLab(BaseModel):
             low_level_channels = 128
 
         self.ASSP = ASSP(in_channels=2048, output_stride=output_stride)
+        self.dropout = nn.Dropout2d(p=0.5)
         self.decoder = Decoder(low_level_channels, num_classes)
 
         if freeze_bn: self.freeze_bn()
@@ -357,6 +358,7 @@ class DeepLab(BaseModel):
         H, W = x.size(2), x.size(3)
         x, low_level_features = self.backbone(x)
         x = self.ASSP(x)
+        x = self.dropout(x)
         x = self.decoder(x, low_level_features)
         x = F.interpolate(x, size=(H, W), mode='bilinear', align_corners=True)
         return x

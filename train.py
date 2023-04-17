@@ -41,6 +41,9 @@ def main(config, resume):
         train_loader=train_loader,
         val_loader=val_loader,
         train_logger=train_logger)
+    # for valid test
+
+    # trainer._valid_epoch(1)
 
     trainer.train()
 

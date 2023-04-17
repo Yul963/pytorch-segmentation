@@ -13,18 +13,16 @@
     },
 
     "train_loader": {
-        "type": "Custom",
+        "type": "CustomFloor",
         "args":{
             "data_dir": "data/custom_only_floor",
             "batch_size": 8,
-            "base_size": 400,
-            "crop_size": 400,
+            "size": 400,
             "augment": true,
             "shuffle": true,
-            "scale": true,
             "flip": true,
-            "rotate": false,
-            "blur": false,
+            "rotate": true,
+            "blur": true,
             "split": "training",
             "num_workers": 4
         }
@@ -35,7 +33,7 @@
         "args":{
             "data_dir": "data/custom_only_floor",
             "batch_size": 8,
-            "base_size": 400,
+            "size": 400,
             "val": true,
             "split": "validation",
             "num_workers": 4

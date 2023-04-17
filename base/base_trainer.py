@@ -72,7 +72,7 @@ class BaseTrainer:
         start_time = datetime.datetime.now().strftime('%m-%d_%H-%M')
         self.checkpoint_dir = os.path.join(cfg_trainer['save_dir'], self.config['name'], start_time)
         helpers.dir_exists(self.checkpoint_dir)
-        config_save_path = os.path.join(self.checkpoint_dir, 'config_segnet.json')
+        config_save_path = os.path.join(self.checkpoint_dir, 'config.json')
         with open(config_save_path, 'w') as handle:
             json.dump(self.config, handle, indent=4, sort_keys=True)
 

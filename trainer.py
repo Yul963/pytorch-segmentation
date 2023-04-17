@@ -57,6 +57,7 @@ class Trainer(BaseTrainer):
             output = self.model(data)
             # target = target.permute(0, 3, 1, 2)
             self.weight = get_weights(target, self.num_classes)
+            target = target.squeeze(1)
             if self.config['arch']['type'][:3] == 'PSP':
                 assert output[0].size()[2:] == target.size()[1:]
                 assert output[0].size()[1] == self.num_classes 
@@ -67,7 +68,6 @@ class Trainer(BaseTrainer):
                 # print(output.size(), target.size())
                 assert output.size()[2:] == target.size()[1:]
                 assert output.size()[1] == self.num_classes
-                # print(self.weight)
                 loss = self.loss(output, target, self.weight)
 
             if isinstance(self.loss, torch.nn.DataParallel):
@@ -129,8 +129,9 @@ class Trainer(BaseTrainer):
             for batch_idx, (data, target) in enumerate(tbar):
                 #data, target = data.to(self.device), target.to(self.device)
                 # LOSS
-                self.weight = get_weights(target, self.num_classes)
                 output = self.model(data)
+                self.weight = get_weights(target, self.num_classes)
+                target = target.squeeze(1)
                 loss = self.loss(output, target, self.weight)
                 if isinstance(self.loss, torch.nn.DataParallel):
                     loss = loss.mean()
