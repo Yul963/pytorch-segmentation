@@ -1,4 +1,6 @@
 import argparse
+
+import cv2
 import scipy
 import os
 import numpy as np
@@ -84,6 +86,7 @@ def save_images(image, mask, output_path, image_file, palette):
     w, h = image.size
     image_file = os.path.basename(image_file).split('.')[0]
     colorized_mask = colorize_mask(mask, palette)
+    image.save(os.path.join(output_path, image_file+'.jpg'))
     colorized_mask.save(os.path.join(output_path, image_file+'.png'))
     # output_im = Image.new('RGB', (w*2, h))
     # output_im.paste(image, (0,0))
@@ -98,11 +101,8 @@ def main():
 
     # Dataset used for training the model
     dataset_type = config['train_loader']['type']
-    assert dataset_type in ['VOC', 'COCO', 'CityScapes', 'ADE20K', 'Custom']
-    if dataset_type == 'CityScapes': 
-        scales = [0.75, 1.0, 1.25, 1.5, 1.75, 2.0, 2.25] 
-    else:
-        scales = [0.75, 1.0, 1.25, 1.5, 1.75, 2.0]
+    assert dataset_type in ['Custom', 'CustomFloor']
+    scales = [0.75, 1.0, 1.25, 1.5, 1.75, 2.0]
     loader = getattr(dataloaders, config['train_loader']['type'])(**config['train_loader']['args'])
     to_tensor = transforms.ToTensor()
     normalize = transforms.Normalize(loader.MEAN, loader.STD)
@@ -118,7 +118,7 @@ def main():
     checkpoint = torch.load(args.model, map_location=device)
     if isinstance(checkpoint, dict) and 'state_dict' in checkpoint.keys():
         checkpoint = checkpoint['state_dict']
-        
+    """
     # If during training, we used data parallel
     if 'module' in list(checkpoint.keys())[0] and not isinstance(model, torch.nn.DataParallel):
         # for gpu inference, use data parallel
@@ -131,10 +131,18 @@ def main():
                 name = k[7:]
                 new_state_dict[name] = v
             checkpoint = new_state_dict
+    """
+    new_state_dict = OrderedDict()
+    for k, v in checkpoint.items():
+        name = k[7:]
+        new_state_dict[name] = v
+    checkpoint = new_state_dict
     # load
     model.load_state_dict(checkpoint)
     model.to(device)
     model.eval()
+    model_scripted = torch.jit.script(model)
+    model_scripted.save('model_scripted.pt')
 
     if not os.path.exists('outputs'):
         os.makedirs('outputs')
@@ -143,8 +151,10 @@ def main():
     with torch.no_grad():
         tbar = tqdm(image_files, ncols=100)
         for img_file in tbar:
-            image = Image.open(img_file).convert('RGB')
-            image = image.resize((380, 380))
+            image = cv2.imread(img_file)
+            image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+            image = Image.fromarray(image)
+            image = image.resize((400, 400))
             input = normalize(to_tensor(image)).unsqueeze(0)
             
             if args.mode == 'multiscale':
@@ -152,7 +162,8 @@ def main():
             elif args.mode == 'sliding':
                 prediction = sliding_predict(model, input, num_classes)
             else:
-                prediction = model(input.to(device))
+                # prediction = model(input.to(device))
+                prediction = model_scripted(input.to(device))
                 prediction = prediction.squeeze(0).cpu().numpy()
             prediction = F.softmax(torch.from_numpy(prediction), dim=0).argmax(0).cpu().numpy()
             save_images(image, prediction, args.output, img_file, palette)
