@@ -26,7 +26,7 @@ class Trainer(BaseTrainer):
             local_transforms.DeNormalize(self.train_loader.MEAN, self.train_loader.STD),
             transforms.ToPILImage()])
         self.viz_transform = transforms.Compose([
-            transforms.Resize((380, 380)),
+            transforms.Resize((400, 400)),
             transforms.ToTensor()])
         
         if self.device == torch.device('cpu'): prefetch = False
